@@ -9,7 +9,8 @@ with Diagram("API Gateway To S3 and ECS", show=False, direction="LR"):
     lb = ELB("NLB")
     api_gw = apigw("APIGW")
 
-    api_gw >> Edge(label="/apis") >> lb >> ECS("ECS")
-    api_gw >> Edge(label="/images") >> S3("Images")
-    api_gw >> Edge(label="/{folder}/{item}") >> S3("Static")
     api_gw >> Edge(label="/") >> S3("index.html")
+    api_gw >> Edge(label="/images/{image}") >> S3("Images")
+    api_gw >> Edge(label="/{folder}/{item}") >> S3("Static")
+    api_gw >> Edge(label="/apis") >> lb >> ECS("ECS")
+    
