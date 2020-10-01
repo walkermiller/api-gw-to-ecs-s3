@@ -48,9 +48,9 @@ class ApiGwToEcsS3Stack(core.Stack):
 ## Create API Gateway resources
 
 ### Create the VPC Link to the Network Load Balancer
-        # vpcLink =apigw.VpcLink(self, 
-        #     "ecs-test-vpc-link",
-        #     targets = []
+        vpcLink =apigw.VpcLink(self, 
+            "ecs-test-vpc-link",
+            targets = [ecs_deploy.load_balancer.load_balancer_arn])
 ### Create the API
         api = apigw.RestApi(self, "ecs-s3-test-api",
                   rest_api_name="ECS S3 Test API",
@@ -110,7 +110,7 @@ class ApiGwToEcsS3Stack(core.Stack):
             http_method="GET",
             proxy=True)
         apis = api.root.add_resource("apis")
-        apii = apis.add_resource("api")
+        apii = apis.add_resource("{api}")
         # apis = api.root.add_resource("apis")
         apii_get = apii.add_method("GET",
             api_integration,
