@@ -1,3 +1,26 @@
+# Sample project for using API gateway to front S3 for static content and a service in ECS Fargate.
+
+## Diagram
+![Diagram](diagram/api_gateway_to_s3_and_ecs.png)
+
+## Overview
+
+This project uses the AWS CDK to generate and deploy cloudormation. To Deploy, you can run the command `cdk deploy` from within the directory (you will need to [install cdk](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) `npn imstall -g aws-cdk`). 
+
+## Objectives
+- *Keep it private.* For demo purposes, the APIGateway is public, but everything else is private: S3, the NLB, and ECS. You can change the API Gateway peice to be private as well. 
+- *Keep it serverless*  Everything here is serverless. 
+
+## Considerations
+
+- Depending on how the services are actually setup, this may not be the best implementation. It is also possible to use an ALB to do path based routing to multiple services in a private mode from API Gateway.
+- This does not upload any files to s3. You will need to add those manually.  
+
+
+
+
+
+
 
 # Welcome to your CDK Python project!
 
