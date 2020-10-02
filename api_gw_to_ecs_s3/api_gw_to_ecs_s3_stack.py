@@ -31,26 +31,35 @@ class ApiGwToEcsS3Stack(core.Stack):
             cluster_name="ecs-apigw-test-cluster",
             container_insights=True,
             vpc=vpc)
-### Using the Network LoadBalance Fargate patterm, this wills creat the container definition, the task definition, the service and the Network load balancer for it. 
+### Using the Network LoadBalance Fargate patterm, this wills create the container definition, the task definition, the service and the Network load balancer for it. 
         ecs_deploy = ecsp.NetworkLoadBalancedFargateService(self, 
             "ecs-apigw-test",
             cluster=cluster,
             cpu=512,
-            desired_count=1,
+            desired_count=2,
             public_load_balancer=False,
             memory_limit_mib=2048,
             task_image_options=ecsp.NetworkLoadBalancedTaskImageOptions(
-                image=ecs.ContainerImage.from_registry("amazon/amazon-ecs-sample")
+                image=ecs.ContainerImage.from_registry("strm/helloworld-http")
+            ),
+            health_check_grace_period=core.Duration.minutes(5)
             )
+### Have to add an Ingress rule to allow traffic through. This applies the CIDR of the VPC. 
+        ecs_deploy.service.connections.security_groups[0].add_ingress_rule(
+            ec2.Peer.ipv4(vpc.vpc_cidr_block),
+            ec2.Port(
+                protocol=ec2.Protocol.TCP,
+                string_representation="",
+                from_port=80,
+                to_port=80
             )
-
-
+        )
 ## Create API Gateway resources
 
 ### Create the VPC Link to the Network Load Balancer
-        vpcLink =apigw.VpcLink(self, 
+        vpc_link =apigw.VpcLink(self, 
             "ecs-test-vpc-link",
-            targets = [ecs_deploy.load_balancer.load_balancer_arn])
+            targets = [ecs_deploy.load_balancer])
 ### Create the API
         api = apigw.RestApi(self, "ecs-s3-test-api",
                   rest_api_name="ECS S3 Test API",
@@ -91,24 +100,17 @@ class ApiGwToEcsS3Stack(core.Stack):
             root_resource_s3_integration,
             method_responses=[method_response])
 
+
 ### API URI
-        api_integration_response = apigw.IntegrationResponse(
-            status_code="200",
-            response_templates={"text/html": "$input.path('$')"},
-            response_parameters={"method.response.header.Content-Type": "'text/html'"})
-        api_integration_options = apigw.IntegrationOptions(
-            credentials_role=rest_api_role,
-            integration_responses=[api_integration_response],
-            request_templates={"application/json": "Action=SendMessage&MessageBody=$input.body"},
-            passthrough_behavior=apigw.PassthroughBehavior.NEVER,
-            request_parameters={
-                "integration.request.header.Content-Type": "'application/x-www-form-urlencoded'",
-                 "integration.request.path.api": "method.request.path.api"})
-        api_integration = apigw.HttpIntegration(
-            "http://{}".format(ecs_deploy.load_balancer.load_balancer_dns_name),
-            options=api_integration_options,
-            http_method="GET",
-            proxy=True)
+        api_integration = apigw.Integration(
+            type=apigw.IntegrationType.HTTP_PROXY,
+            uri="http://{}".format(ecs_deploy.load_balancer.load_balancer_dns_name),
+            integration_http_method="GET",
+            options={
+                "connection_type": apigw.ConnectionType.VPC_LINK,
+                "vpc_link": vpc_link
+            }
+        )
         apis = api.root.add_resource("apis")
         apii = apis.add_resource("{api}")
         # apis = api.root.add_resource("apis")

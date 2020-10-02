@@ -304,47 +304,12 @@ Resources:
         - Key: deletion_protection.enabled
           Value: "false"
       Scheme: internal
-      SecurityGroups:
-        - Fn::GetAtt:
-            - ecsapigwtestLBSecurityGroupEEC58635
-            - GroupId
       Subnets:
         - Ref: MyVpcPrivateSubnet1Subnet5057CF7E
         - Ref: MyVpcPrivateSubnet2Subnet0040C983
-      Type: application
+      Type: network
     Metadata:
       aws:cdk:path: api-gw-to-ecs-s3/ecs-apigw-test/LB/Resource
-  ecsapigwtestLBSecurityGroupEEC58635:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Automatically created Security Group for ELB apigwtoecss3ecsapigwtestLB66202142
-      SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
-          Description: Allow from anyone on port 80
-          FromPort: 80
-          IpProtocol: tcp
-          ToPort: 80
-      VpcId:
-        Ref: MyVpcF9F0CA6F
-    Metadata:
-      aws:cdk:path: api-gw-to-ecs-s3/ecs-apigw-test/LB/SecurityGroup/Resource
-  ecsapigwtestLBSecurityGrouptoapigwtoecss3ecsapigwtestServiceSecurityGroup3158C7C9801D4F7240:
-    Type: AWS::EC2::SecurityGroupEgress
-    Properties:
-      GroupId:
-        Fn::GetAtt:
-          - ecsapigwtestLBSecurityGroupEEC58635
-          - GroupId
-      IpProtocol: tcp
-      Description: Load balancer to target
-      DestinationSecurityGroupId:
-        Fn::GetAtt:
-          - ecsapigwtestServiceSecurityGroup7C2AAD9F
-          - GroupId
-      FromPort: 80
-      ToPort: 80
-    Metadata:
-      aws:cdk:path: api-gw-to-ecs-s3/ecs-apigw-test/LB/SecurityGroup/to apigwtoecss3ecsapigwtestServiceSecurityGroup3158C7C9:80
   ecsapigwtestLBPublicListener46C5E0CB:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -355,14 +320,14 @@ Resources:
       LoadBalancerArn:
         Ref: ecsapigwtestLB4E644359
       Port: 80
-      Protocol: HTTP
+      Protocol: TCP
     Metadata:
       aws:cdk:path: api-gw-to-ecs-s3/ecs-apigw-test/LB/PublicListener/Resource
   ecsapigwtestLBPublicListenerECSGroupCACF40DF:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Port: 80
-      Protocol: HTTP
+      Protocol: TCP
       TargetType: ip
       VpcId:
         Ref: MyVpcF9F0CA6F
@@ -385,7 +350,7 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Essential: true
-          Image: amazon/amazon-ecs-sample
+          Image: strm/helloworld-http
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -458,9 +423,9 @@ Resources:
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
-      DesiredCount: 1
+      DesiredCount: 2
       EnableECSManagedTags: false
-      HealthCheckGracePeriodSeconds: 60
+      HealthCheckGracePeriodSeconds: 300
       LaunchType: FARGATE
       LoadBalancers:
         - ContainerName: web
@@ -492,27 +457,34 @@ Resources:
         - CidrIp: 0.0.0.0/0
           Description: Allow all outbound traffic by default
           IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp:
+            Fn::GetAtt:
+              - MyVpcF9F0CA6F
+              - CidrBlock
+          Description:
+            Fn::Join:
+              - ""
+              - - "from "
+                - Fn::GetAtt:
+                    - MyVpcF9F0CA6F
+                    - CidrBlock
+                - ":"
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
       VpcId:
         Ref: MyVpcF9F0CA6F
     Metadata:
       aws:cdk:path: api-gw-to-ecs-s3/ecs-apigw-test/Service/SecurityGroup/Resource
-  ecsapigwtestServiceSecurityGroupfromapigwtoecss3ecsapigwtestLBSecurityGroupBE8D5A4D80101031A7:
-    Type: AWS::EC2::SecurityGroupIngress
+  ecstestvpclinkDA0685D6:
+    Type: AWS::ApiGateway::VpcLink
     Properties:
-      IpProtocol: tcp
-      Description: Load balancer to target
-      FromPort: 80
-      GroupId:
-        Fn::GetAtt:
-          - ecsapigwtestServiceSecurityGroup7C2AAD9F
-          - GroupId
-      SourceSecurityGroupId:
-        Fn::GetAtt:
-          - ecsapigwtestLBSecurityGroupEEC58635
-          - GroupId
-      ToPort: 80
+      Name: apigwtoecss3ecstestvpclink28FB0D1C
+      TargetArns:
+        - Ref: ecsapigwtestLB4E644359
     Metadata:
-      aws:cdk:path: api-gw-to-ecs-s3/ecs-apigw-test/Service/SecurityGroup/from apigwtoecss3ecsapigwtestLBSecurityGroupBE8D5A4D:80
+      aws:cdk:path: api-gw-to-ecs-s3/ecs-test-vpc-link/Resource
   ecss3testapi5A64DEE9:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -551,7 +523,7 @@ Resources:
       - ecss3testapi5A64DEE9
     Metadata:
       aws:cdk:path: api-gw-to-ecs-s3/ecs-s3-test-api/Account
-  ecss3testapiDeployment921BCACA1eabfa91c9936711ddb100a00b77d071:
+  ecss3testapiDeployment921BCACA4798a58d9a9580369101120e2615b036:
     Type: AWS::ApiGateway::Deployment
     Properties:
       RestApiId:
@@ -561,8 +533,8 @@ Resources:
       - ecss3testapifolderitemGET992FD991
       - ecss3testapifolderitemB25788FA
       - ecss3testapifolder68A89F9A
-      - ecss3testapiapisproxyGET92908D41
-      - ecss3testapiapisproxy795042B1
+      - ecss3testapiapisapiGET2E31067B
+      - ecss3testapiapisapi7B722C4D
       - ecss3testapiapis1AF60FA7
       - ecss3testapiGETB67F550D
       - ecss3testapiimagesimageGETAC1EC940
@@ -576,7 +548,7 @@ Resources:
       RestApiId:
         Ref: ecss3testapi5A64DEE9
       DeploymentId:
-        Ref: ecss3testapiDeployment921BCACA1eabfa91c9936711ddb100a00b77d071
+        Ref: ecss3testapiDeployment921BCACA4798a58d9a9580369101120e2615b036
       StageName: prod
     Metadata:
       aws:cdk:path: api-gw-to-ecs-s3/ecs-s3-test-api/DeploymentStage.prod/Resource
@@ -635,42 +607,30 @@ Resources:
         Ref: ecss3testapi5A64DEE9
     Metadata:
       aws:cdk:path: api-gw-to-ecs-s3/ecs-s3-test-api/Default/apis/Resource
-  ecss3testapiapisproxy795042B1:
+  ecss3testapiapisapi7B722C4D:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId:
         Ref: ecss3testapiapis1AF60FA7
-      PathPart: "{proxy+}"
+      PathPart: "{api}"
       RestApiId:
         Ref: ecss3testapi5A64DEE9
     Metadata:
-      aws:cdk:path: api-gw-to-ecs-s3/ecs-s3-test-api/Default/apis/{proxy+}/Resource
-  ecss3testapiapisproxyGET92908D41:
+      aws:cdk:path: api-gw-to-ecs-s3/ecs-s3-test-api/Default/apis/{api}/Resource
+  ecss3testapiapisapiGET2E31067B:
     Type: AWS::ApiGateway::Method
     Properties:
       HttpMethod: GET
       ResourceId:
-        Ref: ecss3testapiapisproxy795042B1
+        Ref: ecss3testapiapisapi7B722C4D
       RestApiId:
         Ref: ecss3testapi5A64DEE9
       AuthorizationType: NONE
       Integration:
-        Credentials:
-          Fn::GetAtt:
-            - RestAPIRoleA3B4EFA3
-            - Arn
+        ConnectionId:
+          Ref: ecstestvpclinkDA0685D6
+        ConnectionType: VPC_LINK
         IntegrationHttpMethod: GET
-        IntegrationResponses:
-          - ResponseParameters:
-              method.response.header.Content-Type: "'text/html'"
-            ResponseTemplates:
-              text/html: $input.path('$')
-            StatusCode: "200"
-        PassthroughBehavior: NEVER
-        RequestParameters:
-          integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
-        RequestTemplates:
-          application/json: Action=SendMessage&MessageBody=$input.body
         Type: HTTP_PROXY
         Uri:
           Fn::Join:
@@ -683,8 +643,10 @@ Resources:
         - ResponseParameters:
             method.response.header.Content-Type: true
           StatusCode: "200"
+      RequestParameters:
+        method.request.path.api: true
     Metadata:
-      aws:cdk:path: api-gw-to-ecs-s3/ecs-s3-test-api/Default/apis/{proxy+}/GET/Resource
+      aws:cdk:path: api-gw-to-ecs-s3/ecs-s3-test-api/Default/apis/{api}/GET/Resource
   ecss3testapiimages05224226:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -846,14 +808,6 @@ Outputs:
       Fn::GetAtt:
         - ecsapigwtestLB4E644359
         - DNSName
-  ecsapigwtestServiceURL352AF886:
-    Value:
-      Fn::Join:
-        - ""
-        - - http://
-          - Fn::GetAtt:
-              - ecsapigwtestLB4E644359
-              - DNSName
   ecss3testapiEndpointD01435AC:
     Value:
       Fn::Join:
