@@ -5,7 +5,7 @@
 
 ## Overview
 
-This project uses the AWS CDK to generate and deploy cloudormation. To Deploy, you can run the command `cdk deploy` from within the directory (you will need to [install cdk](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) `npn imstall -g aws-cdk`). 
+This project uses the AWS CDK to generate and deploy cloudormation. To Deploy, you can run the command `cdk deploy` from within the directory (you will need to [install cdk](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) `npm imstall -g aws-cdk`). 
 
 ## Objectives
 - *Keep it private.* For demo purposes, the APIGateway is public, but everything else is private: S3, the NLB, and ECS. You can change the API Gateway peice to be private as well. 
